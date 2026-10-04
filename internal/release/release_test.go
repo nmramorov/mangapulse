@@ -7,8 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testTimeout = 1 * time.Second
-
 func TestRelease_SelectNew(t *testing.T) {
 	now := time.Now()
 

@@ -36,7 +36,7 @@ func (R Release) Valid() bool {
 	return R.Key.Valid() && R.MangaID != "" && R.Language != "" && !R.PublishedAt.IsZero()
 }
 
-// SelectNew выбирает новые релизы из переданных.
+// SelectNew выбирает новые релизы из переданных. Производит дедупликацию, проверку языка в релизах, проверку наличия в уже имеющихся релизах. Сортирует новые релизы по PublishedAt, при равенстве по Source, при равенстве по Source - по ID
 func SelectNew(
 	known map[Key]struct{},
 	incoming []Release,
