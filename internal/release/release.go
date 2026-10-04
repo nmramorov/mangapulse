@@ -1,7 +1,6 @@
 package release
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -44,7 +43,11 @@ func SelectNew(
 	language string,
 ) ([]Release, error) {
 	if language == "" {
-		return incoming, fmt.Errorf("language could not be empty")
+		return nil, fmt.Errorf("language could not be empty")
+	}
+
+	if len(incoming) == 0 {
+		return nil, nil
 	}
 
 	err := validateIncomingReleases(incoming)
@@ -58,10 +61,6 @@ func SelectNew(
 }
 
 func validateIncomingReleases(releases []Release) error {
-	if len(releases) == 0 {
-		return errors.New("releases were not provided")
-	}
-
 	for _, release := range releases {
 		if !release.Valid() {
 			return fmt.Errorf("invalid release: %s", release.Key)
@@ -72,22 +71,23 @@ func validateIncomingReleases(releases []Release) error {
 }
 
 func filterIncomingReleases(releases []Release, language string, known map[Key]struct{}) (filtered []Release) {
-	keysMap := make(map[Key]struct{}, len(releases))
+	seen := make(map[Key]struct{}, len(releases))
+	// [en, ru] ru
 	for _, release := range releases {
-		if release.Language != language {
+		key := release.Key
+		if _, ok := seen[key]; ok {
 			continue
 		}
 
-		key := release.Key
-		if _, ok := keysMap[key]; ok {
+		seen[key] = struct{}{}
+
+		if release.Language != language {
 			continue
 		}
 
 		if _, ok := known[key]; ok {
 			continue
 		}
-
-		keysMap[key] = struct{}{}
 
 		filtered = append(filtered, release)
 	}
@@ -99,10 +99,14 @@ func sortReleases(releases []Release) []Release {
 	sort.SliceStable(releases, func(i, j int) bool {
 		if releases[i].PublishedAt.Before(releases[j].PublishedAt) {
 			return true
+		} else if releases[i].PublishedAt.After(releases[j].PublishedAt) {
+			return false
 		}
 
 		if releases[i].Key.Source < releases[j].Key.Source {
 			return true
+		} else if releases[i].Key.Source > releases[j].Key.Source {
+			return false
 		}
 
 		return releases[i].Key.ID < releases[j].Key.ID

@@ -1,7 +1,6 @@
 package release
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -35,11 +34,11 @@ func TestRelease_SelectNew(t *testing.T) {
 			errFunc: assert.Error,
 		},
 		{
-			name: "GIVEN 0 releases THEN return error",
+			name: "GIVEN 0 releases THEN return nil",
 			testParams: params{
 				language: "test",
 			},
-			errFunc: assert.Error,
+			errFunc: assert.NoError,
 		},
 		{
 			name: "GIVEN invalid release ID THEN return error",
@@ -326,12 +325,11 @@ func TestRelease_SelectNew(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		_, cancel := context.WithTimeout(context.Background(), testTimeout)
-		defer cancel()
+		t.Run(tt.name, func(t *testing.T) {
+			newReleases, err := SelectNew(tt.testParams.known, tt.testParams.incoming, tt.testParams.language)
+			tt.errFunc(t, err)
 
-		newReleases, err := SelectNew(tt.testParams.known, tt.testParams.incoming, tt.testParams.language)
-		tt.errFunc(t, err)
-
-		assert.EqualValues(t, tt.expectedReleases, newReleases)
+			assert.EqualValues(t, tt.expectedReleases, newReleases)
+		})
 	}
 }
